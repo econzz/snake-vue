@@ -1,17 +1,17 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+    
+    <SnakeGame score="0"/>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
+import SnakeGame from './components/SnakeGame.vue';
 
 @Component({
   components: {
-    HelloWorld,
+    SnakeGame,
   },
 })
 export default class App extends Vue {}
@@ -25,5 +25,38 @@ export default class App extends Vue {}
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+body{
+  background: #e1e1e1;
+}
+
+div#app {
+    text-align: center;
+    margin-top: 100px;
+}
+
+.game{
+    height: 280px;
+}
+
+.px {
+  width: 10px;
+  height: 10px;
+  background: #e5e5e5;
+  border-bottom: 1px solid #fff;
+  border-right: 1px solid #fff;
+      display: inline-block;
+}
+.px.col{
+  display: block;
+}
+
+.snake{
+  background: #333;
+}
+
+.food{
+  background: blue;
 }
 </style>
