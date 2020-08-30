@@ -1,7 +1,6 @@
 <template>
   <div id="app">
-    
-    <SnakeGame score="0"/>
+    <SnakeGame/>
   </div>
 </template>
 
@@ -18,45 +17,28 @@ export default class App extends Vue {}
 </script>
 
 <style>
+* {
+  margin: 0;
+  
+}
+html, body {
+
+  overflow: hidden;
+  touch-action: none;
+  -ms-touch-action: none;
+
+  width:100%;
+  height:100%;
+}
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+
+  background-color: #2c3e50;
+  position:fixed;
+  width: 100%;
+    height: 100%;
 }
 
-body{
-  background: #e1e1e1;
-}
-
-div#app {
-    text-align: center;
-    margin-top: 100px;
-}
-
-.game{
-    height: 280px;
-}
-
-.px {
-  width: 10px;
-  height: 10px;
-  background: #e5e5e5;
-  border-bottom: 1px solid #fff;
-  border-right: 1px solid #fff;
-      display: inline-block;
-}
-.px.col{
-  display: block;
-}
-
-.snake{
-  background: #333;
-}
-
-.food{
-  background: blue;
-}
 </style>
