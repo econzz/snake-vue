@@ -1,12 +1,28 @@
 <template>
 	<div class="game-wrapper" id="wrapper" ref="game-wrapper" v-bind:style=styleCustom>
 		
+		<div class="overlay" v-if="refGameState!==refGameStateStarted">
+			<div class="titleScreen" v-if="refGameState===refGameStateTitle || refGameState===refGameStateCounting"  v-on:click="titleClicked()">
+				<div class="title-label" v-if="refGameState!==refGameStateCounting"><p>SIMPLE SNAKE!</p><br/><p> TOUCH SCREEN TO START</p></div>
+				<div class="title-countdown" v-if="refGameState===refGameStateCounting">
+					<div class="label">STARTING IN</div>
+					<div class="number" v-if="tick != 0">{{tick}}</div>
+					<div class="number" v-if="tick == 0">GO!</div>
+				</div>
+			</div>
+			<div class="resultScreen" v-if="refGameState===refGameStateGameOver" v-on:click="gameOverClicked()">
+
+				<div class="label"><p>GAME OVER!</p><br/><p> YOUR SCORE IS <b>{{ score }}</b> </p><br/><br/><p> TOUCH SCREEN TO RESTART</p></div>
+
+			</div>
+		</div>
 		<div class="gameCanvas">
 			<div v-for="x in list" :key="x" class="px">
 				<div v-for="y in list" :key="y" class="px col" :class="{snake: isSnake(x,y), food: isFood(x,y)}"></div>
 			</div>
 		</div>
 		<p>Score: <b>{{ score }}</b></p>
+		<p>SpeedCounter: <b>x {{ speedCounter }}</b></p>
 		
 		<div class="gamebutton-area">
 			<div v-on:click="buttonClicked(refSnakeDirectionUp)" id="upButton" class="gamebutton buttonup"></div>
@@ -35,29 +51,71 @@ enum SNAKE_DIRECTION{
 	DOWN,
 }
 
+enum GAME_STATE{
+	STARTED=1,
+	PAUSED=2,
+	TITLE=3,
+	COUNTING_BEFORE_STARTED=4,
+	GAME_OVER=5
+}
+
+interface ParameterType{
+	total:number,
+	snakeLength:number,
+	snakeDirection:SNAKE_DIRECTION,
+	gameState:GAME_STATE,
+	speed:number,
+	tick:number,
+	speedUpRatio:number,
+	speedUpTiming:number
+}
+
 @Component
 export default class SnakeGame extends Vue {
-
+  
 	constructor(){
 		super();
-
-		//initial data
-		this.total = 28;
-		this.snakeLength = 1;
-		this.snake = [{x:0,y:0}]
-		this.snakeDirection =SNAKE_DIRECTION.RIGHT;
-		this.food = {x:0,y:0};
-		this.gameOn = false;
 		
 		this.styleCustom = {
 			margin: this.gameWrapperX,
 			transform: "scale(0.5)"
 		};
-		//
-
-		
+		this.resetData();
+		this.snake = [{x:0,y:0}];
+		this.food = {x:0,y:0};
+		this.snakeLength = this.initialData().snakeLength;
+		this.gameState = this.initialData().gameState;
+		this.tick = this.initialData().tick;
+		this.speed = this.initialData().speed;
+		this.gameInterval = null;
+		this.total = this.initialData().total;
+		this.speedUpRatio = this.initialData().speedUpRatio;
+		this.speedUpTiming = this.initialData().speedUpTiming;
+		this.speedCounter = 1;
 	}
-	
+
+	//GAME PARAMETER
+	gameState:GAME_STATE;
+	speedUpRatio: number;
+	speedUpTiming: number;
+	gameInterval: any;
+	total: number;
+	snake: {x: number, y: number}[];
+	snakeLength: number;
+	snakeDirection: SNAKE_DIRECTION;
+	food: {x:number,y:number};
+	styleCustom:any;
+	speed:number;
+	speedCounter:number;
+	//countdown
+	tick:number;
+	tickInterval:any;
+
+	//gamewrapper
+	gameWrapperX:string;
+	gameWrapperY:string;
+
+	//enum for templates
 	get refSnakeDirectionUp():number{
 		return SNAKE_DIRECTION.UP;
 	}
@@ -70,37 +128,19 @@ export default class SnakeGame extends Vue {
 	get refSnakeDirectionDown():number{
 		return SNAKE_DIRECTION.DOWN;
 	}
-
-	total: number;
-	snake: {x: number, y: number}[];
-	snakeLength: number;
-	snakeDirection: SNAKE_DIRECTION;
-	food: {x:number,y:number};
-	gameOn: boolean;
-	styleCustom:any;
-
-	//gamewrapper
-	gameWrapperScale:number;
-	gameWrapperX:string;
-	gameWrapperY:string;
-
-	computedScale():number{
-		return this.gameWrapperScale;
+	get refGameStateTitle():number{
+		return GAME_STATE.TITLE;
 	}
-
-	
-
-	created(): void {
-		this.init();
-
-
+	get refGameStateStarted():number{
+		return GAME_STATE.STARTED;
 	}
-
-	mounted(): void{
-		this.onWindowResize();
-		this.gameWrapperX = '200 px';
-		this.gameWrapperY = '200 px';
+	get refGameStateGameOver():number{
+		return GAME_STATE.GAME_OVER;
 	}
+	get refGameStateCounting():number{
+		return GAME_STATE.COUNTING_BEFORE_STARTED;
+	}
+	//
 	get list():number[]{
 		let x:number[] = [];
 
@@ -114,15 +154,117 @@ export default class SnakeGame extends Vue {
 	get score():number{
 		return this.snakeLength-1;
 	}
+
+	get refGameState():GAME_STATE{
+		return this.gameState;
+	}
+
+	initialData():ParameterType{
+		return {
+			total:28,
+			snakeLength:1,
+			snakeDirection:SNAKE_DIRECTION.RIGHT,
+			gameState:GAME_STATE.TITLE,
+			speed:120,
+			tick:3,
+			speedUpRatio:0.10,
+			speedUpTiming:5
+		};
+	}
+
+	
+	resetData(){
+		//initial data
+		this.total = this.initialData().total;
+		this.snakeLength = this.initialData().snakeLength;
+		this.snakeDirection = this.initialData().snakeDirection;
+		this.gameState = this.initialData().gameState;
+		this.speed = this.initialData().speed;
+		this.tick = this.initialData().tick;
+		this.speedCounter = 1;
+	}
+
+	created(): void {
+		this.init();
+	}
+
+	mounted(): void{
+		this.onWindowResize();
+		this.gameWrapperX = '200 px';
+		this.gameWrapperY = '200 px';
+	}
+	
+
+	toggleGameState(toGameState:GAME_STATE){
+		var self = this;
+		this.gameState = toGameState;
+
+		switch(this.gameState){
+			case GAME_STATE.TITLE:
+				if(this.gameInterval){
+					clearInterval(this.gameInterval);
+					this.gameInterval = null;
+				}
+					
+				break;
+			case GAME_STATE.COUNTING_BEFORE_STARTED:
+				this.tickInterval = setInterval(function(){
+					self.tick -=1; 
+					if(self.tick <= -1){
+						self.tick = 0;
+						clearInterval(self.tickInterval);
+						self.toggleGameState(GAME_STATE.STARTED);
+					}
+				},1000);
+				break;
+			case GAME_STATE.STARTED:
+
+				this.refreshGameInterval();
+				break;
+			case GAME_STATE.PAUSED:
+				if(this.gameInterval){
+					clearInterval(this.gameInterval);
+					this.gameInterval = null;
+				}
+				break;
+			case GAME_STATE.GAME_OVER:
+				if(this.gameInterval){
+					clearInterval(this.gameInterval);
+					this.gameInterval = null;
+				}
+				
+				break;
+		}
+			
+	}
+
+	refreshGameInterval(){
+		if(this.gameInterval){
+			clearInterval(this.gameInterval);
+			this.gameInterval = null;
+		}
+		this.gameInterval = setInterval(this.move,this.speed);
+	}
   
 	init(): void{
-		console.log("init is called");
-		this.newGame();
-
-		window.addEventListener('keyup', this.keyboardPressed);
 		
-		setInterval(this.move,100);
+		
+		this.newGame();
+		var self = this;
+		this.toggleGameState(this.gameState);
+		//setInterval(this.move,100);
+		window.addEventListener('keyup', this.keyboardPressed);
 		window.addEventListener('resize',this.onWindowResize);
+	}
+
+	titleClicked(){
+		this.toggleGameState(GAME_STATE.COUNTING_BEFORE_STARTED);
+	}
+
+	gameOverClicked(){
+		this.resetData();
+		this.newGame();
+		this.toggleGameState(GAME_STATE.COUNTING_BEFORE_STARTED);
 	}
 
 	buttonClicked(direction:SNAKE_DIRECTION){
@@ -133,7 +275,7 @@ export default class SnakeGame extends Vue {
 	}
 
 	onWindowResize(){
-		console.log("asffaijfoias");
+		
 		var gameElement:HTMLElement,elWidth,elHeight,windowWidth,windowHeight,ratioWidth,ratioHeight,scale;
 		
 		gameElement = document.getElementById("wrapper");
@@ -166,9 +308,7 @@ export default class SnakeGame extends Vue {
 		var newGameY = Math.floor((windowHeight - (elHeight * scale)) / 2);
 		this.styleCustom.margin = newGameY+"px "+newGameX+"px";
 		this.styleCustom.transform = "scale("+scale+")";
-		
-		//gameElement.style.cssText = "margin: '"+newGameY+" px "+newGameX+" px';";
-		
+
 	}
 
 	newGame(){
@@ -181,7 +321,6 @@ export default class SnakeGame extends Vue {
 		self.food = self.getRand();
 	}
 	move(){
-
 		const self = this;
 		const last = self.snake[self.snake.length-1];
 
@@ -241,8 +380,10 @@ export default class SnakeGame extends Vue {
 	}
 
 	processGameOver(){
-		alert('Game over. Your score: ' + this.score );
-		this.newGame();
+		//alert('Game over. Your score: ' + this.score );
+		
+		this.toggleGameState(GAME_STATE.GAME_OVER);
+		//
 	}
 
 	isSnake(x:number,y:number){
@@ -259,6 +400,13 @@ export default class SnakeGame extends Vue {
 	}
 	eat(){
 		this.snakeLength += 1;
+
+		if((this.snakeLength-1) % this.speedUpTiming === 0){
+			this.speed = this.speed - (this.initialData().speed * this.speedUpRatio); 
+			this.speedCounter = parseFloat((this.speedCounter + this.speedUpRatio).toFixed(2));
+			this.refreshGameInterval();
+		}
+
 		this.food = this.getRand();
 	}
 
@@ -315,7 +463,39 @@ export default class SnakeGame extends Vue {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.overlay{
+	width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+.titleScreen{
+	width: 100%;
+    height: 100%;
+}
 
+.titleScreen .title-label{
+	margin-top: 50%;
+    font-size: 40px;
+    color: white;
+}
+
+.titleScreen .title-countdown{
+	margin-top: 50%;
+    font-size: 40px;
+    color: white;
+}
+
+.resultScreen{
+	width: 100%;
+    height: 100%;
+	margin-top: 50%;
+    font-size: 40px;
+    color: white;
+}
 
 .gamebutton-area{
 	margin:50px auto;

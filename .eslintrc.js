@@ -19,6 +19,7 @@ module.exports = {
     "@typescript-eslint/member-delimiter-style": "off",
     "@typescript-eslint/type-annotation-spacing":"off",
     "@typescript-eslint/no-this-alias":"off",
-    "@typescript-eslint/no-unused-vars":"off"
+    "@typescript-eslint/no-unused-vars":"off",
+    "@typescript-eslint/no-explicit-any":"off",
   }
 }
