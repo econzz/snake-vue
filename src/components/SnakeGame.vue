@@ -36,7 +36,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-
+export declare var NHPScript;
 enum KEYBOARD_DIRECTION{
 	UP=38,
 	LEFT=37,
@@ -185,7 +185,13 @@ export default class SnakeGame extends Vue {
 	}
 
 	created(): void {
-		this.init();
+		var self = this;
+		NHPScript.initialize().then(function(){
+			self.init();
+		}).catch(function(e:any){
+			self.init();
+		});
+		
 	}
 
 	mounted(): void{
@@ -247,14 +253,23 @@ export default class SnakeGame extends Vue {
 	}
   
 	init(): void{
-		
-		
-		this.newGame();
 		var self = this;
-		this.toggleGameState(this.gameState);
-		//setInterval(this.move,100);
-		window.addEventListener('keyup', this.keyboardPressed);
-		window.addEventListener('resize',this.onWindowResize);
+		NHPScript.startGame().then(function(){
+			self.newGame();
+			
+			self.toggleGameState(self.gameState);
+			//setInterval(this.move,100);
+			window.addEventListener('keyup', self.keyboardPressed);
+			window.addEventListener('resize',self.onWindowResize);
+		}).catch(function(e:any){
+			self.newGame();
+			
+			self.toggleGameState(self.gameState);
+			//setInterval(this.move,100);
+			window.addEventListener('keyup', self.keyboardPressed);
+			window.addEventListener('resize',self.onWindowResize);
+		});
+		
 	}
 
 	titleClicked(){
@@ -381,6 +396,12 @@ export default class SnakeGame extends Vue {
 
 	processGameOver(){
 		//alert('Game over. Your score: ' + this.score );
+
+		NHPScript.sendScore(this.score).then(function(){
+
+		}).catch(function(e:any){
+
+		});
 		
 		this.toggleGameState(GAME_STATE.GAME_OVER);
 		//
