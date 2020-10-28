@@ -37,6 +37,8 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 export declare var NHPScript;
+
+//keyboard direction enum
 enum KEYBOARD_DIRECTION{
 	UP=38,
 	LEFT=37,
@@ -44,6 +46,7 @@ enum KEYBOARD_DIRECTION{
 	DOWN=40
 }
 
+//snake direction enum
 enum SNAKE_DIRECTION{
 	UP,
 	LEFT,
@@ -51,6 +54,7 @@ enum SNAKE_DIRECTION{
 	DOWN,
 }
 
+//current game state
 enum GAME_STATE{
 	STARTED=1,
 	PAUSED=2,
@@ -59,6 +63,7 @@ enum GAME_STATE{
 	GAME_OVER=5
 }
 
+//Parameter Type for game
 interface ParameterType{
 	total:number,
 	snakeLength:number,
@@ -73,6 +78,7 @@ interface ParameterType{
 @Component
 export default class SnakeGame extends Vue {
   
+  	//constructor
 	constructor(){
 		super();
 		
@@ -140,6 +146,7 @@ export default class SnakeGame extends Vue {
 	get refGameStateCounting():number{
 		return GAME_STATE.COUNTING_BEFORE_STARTED;
 	}
+
 	//
 	get list():number[]{
 		let x:number[] = [];
@@ -159,6 +166,9 @@ export default class SnakeGame extends Vue {
 		return this.gameState;
 	}
 
+	/**
+	 * initial Data 
+	 */
 	initialData():ParameterType{
 		return {
 			total:28,
@@ -186,6 +196,7 @@ export default class SnakeGame extends Vue {
 
 	created(): void {
 		var self = this;
+		//initialize sdk
 		NHPScript.initialize().then(function(){
 			self.init();
 		}).catch(function(e:any){
@@ -200,7 +211,10 @@ export default class SnakeGame extends Vue {
 		this.gameWrapperY = '200 px';
 	}
 	
-
+	/**
+	 * change depends on game state
+	 * @param toGameState {GAME_STATE} game state
+	 */
 	toggleGameState(toGameState:GAME_STATE){
 		var self = this;
 		this.gameState = toGameState;
@@ -244,6 +258,9 @@ export default class SnakeGame extends Vue {
 			
 	}
 
+	/**
+	 * game interval speed is based on speed parameter
+	 */
 	refreshGameInterval(){
 		if(this.gameInterval){
 			clearInterval(this.gameInterval);
@@ -252,8 +269,12 @@ export default class SnakeGame extends Vue {
 		this.gameInterval = setInterval(this.move,this.speed);
 	}
   
+  /**
+   * init function
+   */
 	init(): void{
 		var self = this;
+		//SDK call start game
 		NHPScript.startGame().then(function(){
 			self.newGame();
 			
@@ -272,16 +293,23 @@ export default class SnakeGame extends Vue {
 		
 	}
 
+/**
+ * click on title
+ */
 	titleClicked(){
 		this.toggleGameState(GAME_STATE.COUNTING_BEFORE_STARTED);
 	}
 
+/**
+ * clicked when game over
+ */
 	gameOverClicked(){
-		this.resetData();
-		this.newGame();
+		this.resetData(); //reset data to initial
+		this.newGame(); //new game
 		this.toggleGameState(GAME_STATE.COUNTING_BEFORE_STARTED);
 	}
 
+	//joypad button click
 	buttonClicked(direction:SNAKE_DIRECTION){
 		console.log("buttonclicked");
 		console.log(SNAKE_DIRECTION);
@@ -289,6 +317,9 @@ export default class SnakeGame extends Vue {
 		this.changeDirection(direction);
 	}
 
+	/**
+	 * invoked when window is resized
+	 */
 	onWindowResize(){
 		
 		var gameElement:HTMLElement,elWidth,elHeight,windowWidth,windowHeight,ratioWidth,ratioHeight,scale;
@@ -326,6 +357,9 @@ export default class SnakeGame extends Vue {
 
 	}
 
+/**
+ * on new game
+ */
 	newGame(){
 		const self = this;
 
@@ -335,6 +369,9 @@ export default class SnakeGame extends Vue {
 		self.snake.push(self.getRand());
 		self.food = self.getRand();
 	}
+	/**
+	 * this function will call each interval
+	 */
 	move(){
 		const self = this;
 		const last = self.snake[self.snake.length-1];
@@ -394,9 +431,13 @@ export default class SnakeGame extends Vue {
 		}
 	}
 
+/**
+ * 
+ * game over!
+ */
 	processGameOver(){
 		//alert('Game over. Your score: ' + this.score );
-
+		//send score to SDK
 		NHPScript.sendScore(this.score).then(function(){
 
 		}).catch(function(e:any){
@@ -407,6 +448,11 @@ export default class SnakeGame extends Vue {
 		//
 	}
 
+/**
+ * is current cell is occupied with snake?
+ * @param x {number} x coordinate
+ * @param y {number} y coordinate
+ */
 	isSnake(x:number,y:number){
 		for(const i in this.snake){
 			if(this.snake[i].x == x && this.snake[i].y == y){
@@ -414,11 +460,20 @@ export default class SnakeGame extends Vue {
 			}
 		}
 	}
+	/**
+ * is current cell is occupied with food?
+ * @param x {number} x coordinate
+ * @param y {number} y coordinate
+ */
 	isFood(x:number,y:number){
 		if(this.food.x == x && this.food.y == y){
 			return true;
 		}
 	}
+
+	/**
+ * eat food, and increase speed + increase length of snake
+ */
 	eat(){
 		this.snakeLength += 1;
 
@@ -431,6 +486,9 @@ export default class SnakeGame extends Vue {
 		this.food = this.getRand();
 	}
 
+/**
+ * when played on keyboard
+ */
 	keyboardPressed(e: KeyboardEvent){
 		e.preventDefault();
 		e.stopPropagation();
@@ -458,6 +516,10 @@ export default class SnakeGame extends Vue {
 
 	}
   
+  /**
+   * change direction of snake
+   * @param toDirection {SNAKE_DIRECTION} direction of the snake
+   */
 	changeDirection(toDirection:SNAKE_DIRECTION){
 
 		if(toDirection !== undefined){
@@ -476,6 +538,9 @@ export default class SnakeGame extends Vue {
 		return false;
 	}
 
+	/**
+	 * random food position
+	 */
 	getRand(){
 		return {x: Math.floor(Math.random()*this.total), y: Math.floor(Math.random()*this.total)}
 	}

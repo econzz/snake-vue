@@ -1,5 +1,7 @@
 # snake-vue
 
+a snake game made by Nelson, just for purpose to study vue.js
+
 ## Project setup
 ```
 npm install
